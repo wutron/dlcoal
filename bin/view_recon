@@ -43,12 +43,13 @@ g.add_option("--names", dest="names",
 g.add_option("-S", "--smap", dest="smap", metavar="GENE_TO_SPECIES_MAP")
 g.add_option("--cscale", dest="cscale", metavar="COAL_SCALE",
              type="float")
-g.add_option("-n", "--popsize", dest="popsize", metavar="POPULATION_SIZE",
-             type="float")
-g.add_option("-D", "--duprate", dest="duprate", metavar="DUPLICATION_RATE",
-             type="float")
-g.add_option("-L", "--lossrate", dest="lossrate", metavar="LOSS_RATE",
-             type="float")
+##g.add_option("-n", "--popsize", dest="popsize", metavar="POPULATION_SIZE",
+##             type="float")
+##g.add_option("-D", "--duprate", dest="duprate", metavar="DUPLICATION_RATE",
+##             type="float")
+##g.add_option("-L", "--lossrate", dest="lossrate", metavar="LOSS_RATE",
+##             type="float")
+o.add_option_group(g)
 
 
 conf, args = o.parse_args()
@@ -394,7 +395,6 @@ def show_data_files(prefix, stree,
             conf.xscale = 400.0 / times[locus_tree.root]
         except:
             conf.xscale = 1.0
-
 
     stream = os.popen(conf.viewer, "w")
     if conf.nocoal:

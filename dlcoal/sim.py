@@ -51,7 +51,7 @@ def sample_dlcoal(stree, n, duprate, lossrate, namefunc=lambda x: x,
             n2[node.name] = n[snode.name]
     else:
         n2 = n
-        	                
+        
     if len(locus_tree.nodes) <= 1:
         # total extinction
         coal_tree = treelib.Tree()

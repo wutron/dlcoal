@@ -37,7 +37,7 @@ o.add_option("-D", "--duprate", dest="duprate", metavar="DUPLICATION_RATE",
 o.add_option("-L", "--lossrate", dest="lossrate", metavar="LOSS_RATE",
              type="float",
              help="rate of gene loss (losses/gene/myr)")             
-o.add_option("-g", "--gentime", dest="gentime", metavar="GENRATION_TIME",
+o.add_option("-g", "--gentime", dest="gentime", metavar="GENERATION_TIME",
              type="float",
              help="generation time (years)")             
 o.add_option("-i", "--iter", dest="iter", metavar="NUMBER_OF_SIMULATION",
@@ -51,56 +51,26 @@ conf, args = o.parse_args()
 
 
 #=============================================================================
-
-def error(msg):
-    print >>sys.stderr, msg
-    sys.exit(1)
-
-#=============================================================================
 # read inputs
 
-if not conf.stree:
-    error("species tree --stree is required")
 stree = treelib.read_tree(conf.stree)
 outdir = conf.outputdir
 
-"""
-# convert species tree into generations
-if not conf.gentime:
-    error("generation time --gentime is required")
-for node in stree:
-    node.dist *= 1e6 / conf.gentime
-duprate = conf.duprate / (1e6 / conf.gentime)
-lossrate = conf.lossrate / (1e6 / conf.gentime)
-times = treelib.get_tree_timestamps(stree)
-
-# get popsizes
-#  NOTE: popsize is multiplied by 2 to account for diploid species.
-#  Currently, branch-specific generation times are not supported
-gentimes = {}
-if conf.popsize is None:
-    popsizes = {}
+# get dup and loss rates
+if conf.duprate is None:
+    duprate = {}
     for node in stree:
-        popsizes[node.name] = (2 * float(node.data["pop"]))
-        gentimes[node.name] = node.data.get("g", conf.gentime)
-
-    if len(set(gentimes.values())) != 1:
-        error("branch-specific generation times are not currently supported")
+        duprate[node.name] = float(node.data["duprate"])
 else:
-    popsizes = 2 * conf.popsize
-"""
+    duprate = conf.duprate
+if conf.lossrate is None:
+    lossrate = {}
+    for node in stree:
+        lossrate[node.name] = float(node.data["lossrate"])
+else:
+    lossrate = conf.lossrate
 
-# convert species tree into generations
-#for node in stree:
-#    node.dist *= 1e6 / conf.gentime
-#duprate = conf.duprate / (1e6 / conf.gentime)
-#lossrate = conf.lossrate / (1e6 / conf.gentime)
-#times = treelib.get_tree_timestamps(stree)
-
-#for node in stree:
-#    node.dist *= 1e6 / conf.gentime
-duprate = conf.duprate# / (1e6 / conf.gentime)
-lossrate = conf.lossrate# / (1e6 / conf.gentime)
+# get tree times
 times = treelib.get_tree_timestamps(stree)
 
 # get popsizes
@@ -110,7 +80,7 @@ if conf.popsize is None:
     popsizes = {}
     for node in stree:
         popsizes[node.name] = (2 * float(node.data["pop"]) *
-	                      float(node.data["g"]) / 1e6)
+                                   float(node.data["g"]) / 1e6)
 else:
     popsizes = 2 * conf.popsize * conf.gentime / 1e6
 

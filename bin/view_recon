@@ -21,10 +21,14 @@ from compbio import phylo
 #=============================================================================
 # options
 
+default_exts = {"coal_tree": ".coal.tree",
+                "coal_recon": ".coal.recon",
+                "locus_tree": ".locus.tree",
+                "locus_recon": ".locus.recon",
+                "daughters": ".daughters"}
+
 o = optparse.OptionParser()
 o.add_option("-s", "--stree", dest="stree", metavar="SPECIES_TREE")
-o.add_option("-g", "--gentime", dest="gentime", metavar="GENRATION_TIME",
-             type="float")
 o.add_option("-v", "--viewer", dest="viewer", metavar="SVG_VIEWER",
              default="display")
 o.add_option("-x", "--xscale", dest="xscale", metavar="BRANCH_LENGTH_SCALE",
@@ -34,7 +38,6 @@ o.add_option("-l", "--log", dest="log", metavar="DLCOAL_LOG_FILE")
 o.add_option("-d", "--noduploss", dest="noduploss", action="store_true")
 o.add_option("-c", "--nocoal", dest="nocoal", action="store_true")
 
-
 g = optparse.OptionGroup(o, "Miscellaneous")
 g.add_option("--names", dest="names",
              action="store_true",
@@ -43,6 +46,9 @@ g.add_option("--names", dest="names",
 g.add_option("-S", "--smap", dest="smap", metavar="GENE_TO_SPECIES_MAP")
 g.add_option("--cscale", dest="cscale", metavar="COAL_SCALE",
              type="float")
+g.add_option("--no_reorder", dest="reorder", default=True, action="store_false")
+##g.add_option("-g", "--gentime", dest="gentime", metavar="GENERATION_TIME",
+##             type="float")
 ##g.add_option("-n", "--popsize", dest="popsize", metavar="POPULATION_SIZE",
 ##             type="float")
 ##g.add_option("-D", "--duprate", dest="duprate", metavar="DUPLICATION_RATE",
@@ -51,6 +57,23 @@ g.add_option("--cscale", dest="cscale", metavar="COAL_SCALE",
 ##             type="float")
 o.add_option_group(g)
 
+g = optparse.OptionGroup(o, "Extensions")
+g.add_option("--coaltreeext", dest="coal_tree_ext", metavar="COAL_TREE_EXT",
+             default=default_exts["coal_tree"],
+             help="coalescent tree extension (default: \".coal.tree\")")
+g.add_option("--coalreconext", dest="coal_recon_ext", metavar="COAL_RECON_EXT",
+             default=default_exts["coal_recon"],
+             help="coalescent recon extension (default: \".coal.recon\")")
+g.add_option("--locustreeext", dest="locus_tree_ext", metavar="LOCUS_TREE_EXT",
+             default=default_exts["locus_tree"],
+             help="locus tree extension (default: \".locus.tree\")")
+g.add_option("--locusreconext", dest="locus_recon_ext", metavar="LOCUS_RECON_EXT",
+             default=default_exts["locus_recon"],
+             help="locus recon extension (default: \".locus.recon\")")
+g.add_option("--daughtersext", dest="daughters_ext", metavar="DAUGHTERS_EXT",
+             default=default_exts["daughters"],
+             help="daughters extension (default: \".daughters\")")
+o.add_option_group(g)
 
 conf, args = o.parse_args()
 
@@ -350,17 +373,17 @@ def show_data_files(prefix, stree,
                     locus_recon_color = (1, 0, 0, .5),
                     coal_recon_color = (0, 0, 1, .2)):
 
-    locus_tree = treelib.read_tree(prefix + ".locus.tree")
+    locus_tree = treelib.read_tree(prefix + conf.locus_tree_ext)
 
     if stree:
         locus_recon, locus_events = phylo.read_recon_events(
-            prefix + ".locus.recon", locus_tree, stree)
+            prefix + conf.locus_recon_ext, locus_tree, stree)
     else:
         locus_recon = None
         locus_events = None
 
     if not conf.nocoal:
-        coal_tree = treelib.read_tree(prefix + ".coal.tree")
+        coal_tree = treelib.read_tree(prefix + conf.coal_tree_ext)
 
         # TODO: clean up
         if conf.cscale:
@@ -385,9 +408,10 @@ def show_data_files(prefix, stree,
                     x.dist *= conf.cscale
 
         coal_recon, coal_events = phylo.read_recon_events(
-            prefix + ".coal.recon", coal_tree, locus_tree)
+            prefix + conf.coal_recon_ext, coal_tree, locus_tree)
 
-        treelib.reorder_tree(coal_tree, locus_tree, root=False)
+        if conf.reorder:
+            treelib.reorder_tree(coal_tree, locus_tree, root=False)
 
     if conf.xscale is None:
         try:
@@ -446,7 +470,8 @@ def show_log(data, coal_tree, stree,
     if not conf.nocoal:
         coal_recon, coal_events = parse_recon(data["coal_recon"], [],
                                               coal_tree, locus_tree)
-        treelib.reorder_tree(coal_tree, locus_tree, root=False)
+        if conf.reorder:
+            treelib.reorder_tree(coal_tree, locus_tree, root=False)
 
     if conf.xscale is None:
         try:
@@ -487,9 +512,9 @@ def show_log(data, coal_tree, stree,
 if not conf.noduploss or conf.stree:
     stree = treelib.read_tree(conf.stree)
 
-    # convert species tree into generations
-    for node in stree:
-        node.dist *= 1e6 / conf.gentime
+##    # convert species tree into generations
+##    for node in stree:
+##        node.dist *= 1e6 / conf.gentime
 else:
     stree = None
 

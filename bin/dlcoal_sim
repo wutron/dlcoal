@@ -30,7 +30,7 @@ o.add_option("-s", "--stree", dest="stree", metavar="SPECIES_TREE",
              help="species tree file in newick format (myr)")
 o.add_option("-n", "--popsize", dest="popsize", metavar="POPULATION_SIZE",
              type="float",
-             help="Effective population size")
+             help="effective population size")
 o.add_option("-D", "--duprate", dest="duprate", metavar="DUPLICATION_RATE",
              type="float",
              help="rate of a gene duplication (dups/gene/myr)")
@@ -40,9 +40,12 @@ o.add_option("-L", "--lossrate", dest="lossrate", metavar="LOSS_RATE",
 o.add_option("-g", "--gentime", dest="gentime", metavar="GENERATION_TIME",
              type="float",
              help="generation time (years)")             
+o.add_option("", "--nsamples", dest="nsamples", metavar="NUMBER_OF_SAMPLES",
+             type="int",
+             help="number of samples per locus")
 o.add_option("-i", "--iter", dest="iter", metavar="NUMBER_OF_SIMULATION",
              type="int", default=1,
-             help="number of simulationed gene trees to create")
+             help="number of simulated gene trees to create")
 o.add_option("", "--minsize", dest="minsize", metavar="MIN_NUMBER_OF_LEAVES",
              type="int", default=0,
              help="minimum number of genes required per family")
@@ -84,11 +87,24 @@ if conf.popsize is None:
 else:
     popsizes = 2 * conf.popsize * conf.gentime / 1e6
 
+# get sample sizes
+if conf.nsamples is not None:
+    leaf_counts = dict((l, conf.nsamples) for l in stree.leaf_names())
+else:
+    leaf_counts = {}
+    for node in stree:
+        try:
+            leaf_counts[node.name] = int(node.data["nsamples"])
+        except:
+            leaf_counts[node.name] = 1
+    
+
 #=============================================================================
 # perform simulations
 
 dlcoal.sim.dlcoal_sims(
     outdir, conf.iter, stree, popsizes, duprate, lossrate,
+    leaf_counts=leaf_counts,
     minsize=conf.minsize)
 
 

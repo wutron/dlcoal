@@ -25,12 +25,14 @@ def dlcoal_sims(outdir, nsims, stree, n, duprate, lossrate,
 
         # sample a new tree from DLCoal model
         coal_tree, ex = sample_dlcoal(stree, n, duprate, lossrate,
-                                          **options)
+                                      **options)
         dlcoal.write_dlcoal_recon(outfile, coal_tree, ex)
 
 
 
-def sample_dlcoal(stree, n, duprate, lossrate, namefunc=lambda x: x,
+def sample_dlcoal(stree, n, duprate, lossrate,
+                  leaf_counts=None,
+                  namefunc=lambda x: x,
                   remove_single=True, name_internal="n",
                   minsize=0, reject=False):
     """Sample a gene tree from the DLCoal model"""
@@ -40,17 +42,27 @@ def sample_dlcoal(stree, n, duprate, lossrate, namefunc=lambda x: x,
         # TODO: does this take a namefunc?
         locus_tree, locus_recon, locus_events = \
                     birthdeath.sample_birth_death_gene_tree(
-            stree, duprate, lossrate)
+                        stree, duprate, lossrate)
         if len(locus_tree.leaves()) >= minsize:
             break
 
     # if n is a dict, update it with gene names from locus tree
     if isinstance(n, dict):
-        n = {}
+        n2 = {}
         for node, snode in locus_recon.iteritems():
             n2[node.name] = n[snode.name]
     else:
         n2 = n
+
+    # if leaf_counts is a dict, update it with gene names from locus tree
+    # TODO: how to handle copy number polymorphism?
+    if isinstance(leaf_counts, dict):
+        leaf_counts2 = {}
+        for node in locus_tree.leaves():
+            snode = locus_recon[node]
+            leaf_counts2[node.name] = leaf_counts[snode.name]
+    else:
+        leaf_counts2 = leaf_counts
         
     if len(locus_tree.nodes) <= 1:
         # total extinction
@@ -70,10 +82,10 @@ def sample_dlcoal(stree, n, duprate, lossrate, namefunc=lambda x: x,
         if reject:
             # use slow rejection sampling (for testing)
             coal_tree, coal_recon = sample_multilocus_tree_reject(
-                locus_tree, n2, daughters=daughters, namefunc=namefunc)
+                locus_tree, n2, leaf_counts=leaf_counts2, daughters=daughters, namefunc=namefunc)
         else:
             coal_tree, coal_recon = sample_multilocus_tree(
-                locus_tree, n2, daughters=daughters, namefunc=namefunc)
+                locus_tree, n2, leaf_counts=leaf_counts2, daughters=daughters, namefunc=namefunc)
 
         # clean up coal tree
         if remove_single:
@@ -188,6 +200,9 @@ def sample_multilocus_tree(stree, n, leaf_counts=None,
 def sample_multilocus_tree_reject(locus_tree, n, leaf_counts=None,
                                   daughters=set(),
                                   namefunc=None):
+
+    if leaf_counts is not None:
+        raise Exception("leaf_counts not implemented")
     
     # use rejection sampling
     while True:

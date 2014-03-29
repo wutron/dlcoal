@@ -5,7 +5,6 @@
 # python imports
 import os, sys, optparse
 from itertools import chain
-from os.path import dirname
 
 # import dlcoal library
 try:
